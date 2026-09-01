@@ -13,16 +13,20 @@ static double pop(void);
 
 int sp = 0;      
 int spInt = 0;
-int val[MAXVAL];
+double val[MAXVAL];
 
 int main(void)
 {
     int type;
+    double op1;
     double op2;
     int op1_int;
     int op2_int;
     char s[MAXOP];
-
+    double result;
+    double op;
+    char operator;
+    
     bool nonl = false; // no newline, doesn't call and print pop() in '\n'
 
     while((type = getop(s)) != EOF) {
@@ -30,10 +34,63 @@ int main(void)
             case NUMBER:
                 push(atof(s));
                 break;
+            case '=':
+                result = pop();
+                switch(operator) {
+                    case '*':
+                        push(result / op);
+                        break;
+                    case '+':
+                        push(result - op);
+                        break;
+                    case '-':
+                        push(result + op);
+                        break;
+                    case '/':
+                        push(result * op);
+                        break;
+                }
+                break;
+            case '-':
+                op2 = pop();
+                op1 = pop();
+                operator = '-';
+                if (op1 == 'x') {
+                    op = op2;
+                    break;
+                }
+                else if (op2 == 'x') {
+                    op = op1;
+                    break;
+                }
+                push(op1 - op2);
+                break;
             case '+':
-                push(pop() + pop());
+                op2 = pop();
+                op1 = pop();
+                operator = '+';
+                if (op1 == 'x') {
+                    op = op2;
+                    break;
+                }
+                else if (op2 == 'x') {
+                    op = op1;
+                    break;
+                }
+                push(op1 + op2);
                 break;
             case '*':
+                op2 = pop();
+                op1 = pop();
+                operator = '*';
+                if (op1 == 'x') {
+                    op = op2;
+                    break;
+                }
+                else if (op2 == 'x') {
+                    op = op1;
+                    break;
+                }
                 push(pop() * pop());
                 break;
             case 'z':
@@ -42,6 +99,17 @@ int main(void)
                 break;
             case '/':
                 op2 = pop();
+                op1 = pop();
+                operator = '/';
+                if (op1 == 'x' && op2 != 0.0) {
+                    op = op2;
+                    break;
+                }
+                else if (op2 == 'x') {
+                    op = op1;
+                    break;
+                }
+
                 if(op2 != 0.0)
                     push(pop() / op2);
                 else
@@ -91,6 +159,9 @@ int main(void)
                 while (sp > 0)
                     pop();
                 nonl = true;
+                break;
+            case 'x':
+                push('x');
                 break;
             default:
                 printf("error: unknown command %s\n", s);
