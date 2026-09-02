@@ -15,8 +15,25 @@ int sp = 0;
 int spInt = 0;
 double val[MAXVAL];
 
+void printWelcome(void) {
+    const int sz = 255;
+
+    char str[sz];
+    FILE *fp;
+
+    fp = fopen("welcm.txt", "r");
+
+    while (fgets(str,sz,fp)!=NULL) {
+        printf("%s", str);
+    };
+
+    fclose(fp);
+}
+
 int main(void)
 {
+    printWelcome();
+
     int type;
     double op1;
     double op2;
