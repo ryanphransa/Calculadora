@@ -1,31 +1,37 @@
-operator = 0
+operator = []
+operand = []
+# Apply PEMDAS
 
-def isoperator(temp):
-    if temp in {'+', '-', '*', '/'}:
+def endme ():
+    operand[0] operator[0] operand[1]
+    operand[2] oeprator[1] operand[3]
+    operand[4] operator[2] operand[5] 
+    result = operation[operator[0]](operand[0], operand[1]) 
+
+def isoperator(string):
+    if string in {'+', '-', '*', '/'}:
         global operator
-        operator = temp
+        operator.append(string)
         return True
     else:
         return operator
 
-temp = input()
+string = input()
 i = j = 0
-num = [0, 0]
-while i < len(temp):
-    if (temp[i].isdigit()):
-        n = n * 10 + int(temp[i])
-        num[j] = int(temp[i])
-        j += 1
-    elif (temp[i] == '='):
-        if (isoperator(1) == '+'):
-            print(num[0] + num[1])
-        elif (isoperator(1) == '-'):
-            print(num[0] - num[1])
-        elif (isoperator(1) == '*'):
-            print(num[0] * num[1])
-        elif (isoperator(1) == '/'):
-            print(num[0] / num[1])
 
-    isoperator(temp[i])
+while i < len(string):
+    if (string[i].isdigit()):
+        operand.append(string[i])
+    elif (string[i] == '='):
+        endme()
+    elif (isoperator(string[i])):
+        print('a')
 
-    i = i + 1
+    i += 1
+
+print("Operands:") 
+for x in operand:
+    print(x)
+print("Operators:")
+for x in operator:
+    print(x)

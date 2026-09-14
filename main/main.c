@@ -15,13 +15,13 @@ int sp = 0;
 int spInt = 0;
 double val[MAXVAL];
 
-void printWelcome(void) {
+void printHelp(void) {
     const int sz = 255;
 
     char str[sz];
     FILE *fp;
 
-    fp = fopen("welcm.txt", "r");
+    fp = fopen("help.txt", "r");
 
     while (fgets(str,sz,fp)!=NULL) {
         printf("%s", str);
@@ -32,8 +32,6 @@ void printWelcome(void) {
 
 int main(void)
 {
-    printWelcome();
-
     int type;
     double op1;
     double op2;
@@ -108,7 +106,7 @@ int main(void)
                     op = op1;
                     break;
                 }
-                push(pop() * pop());
+                push(op1 * op2);
                 break;
             case 'z':
                 op2 = pop();
@@ -142,11 +140,15 @@ int main(void)
                     printf("\t%.8g\n", pop());
                 nonl = false;
                 break;
+            case 'h':
+                printHelp();
+                nonl = true;
+                break;
             case 'p': // print stack
                 if (sp > 0) {
                     printf("stack: ");
-                    for(int i = 0; i < sp; i++)
-                        printf("%d ", val[i]);
+                    for(int i = sp; i > 0; --i)
+                        printf("%.2f ", val[i]);
                     nonl = true;
                 }
                 else
