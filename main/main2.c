@@ -102,7 +102,7 @@ void start(char s[]) {
     }
 }
 
-void fakegetline(char s[]) {
+char *fakegetline(char s[]) {
     int i, c;
     i = 0;
     while((c = getchar()) != '\n')
@@ -112,10 +112,12 @@ void fakegetline(char s[]) {
     }
     s[i] = '\0';
 
-    start(s);
+    return s;
 }
 
 int main() {
     char s[MAX_VAL];
-    fakegetline(s);
+    start(fakegetline(s));
+
+    return 0;
 }
