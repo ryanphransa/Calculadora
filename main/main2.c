@@ -62,42 +62,34 @@ void start(char s[]) {
     int n = 0;
 
     while (s[i] != '\0') {
-        // This search can't be increasing, need to apply PEMDAS order
-        // of operations.
-        /*for (i = prior = prior_index = 0; i < strlen(s); i++) {
-            if (isoperator(s[i]) == true && PEMDAS(s[i]) > prior) {
-                prior = PEMDAS(s[i]); 
-                prior_index = i;
-            }
-        }*/
-        //printf("we should start with: s[i] = %c\n", s[prior_index]);
+        // PEMDAS logic
+        // r(1, 2, 3...) = results of the order of operations
+        // 
+        // r1 means the first operation to be done, in this case
+        // is the operation of the base 3 with expoent 2 (3 * 3).
+        //
+        // 1 + 2 * 3 / 3"2
+        // 1 + 2 * 3 / (3*3)    => r1=(3*3)
+        // 1 + (2 * 3) / (3*3)  => r1=(3*3), r2=(2*3)
+        // 1 + ((2*3) / (3*3))  => r1=(3*3), r2=(2*3), r3=r1/r2
+        // (1 + ((2*3) / (3*3)) => r1=(3*3), r2=(2*3), r3=r1/r2, r4= 1+r3
 
+        static int op_pemdas = 0;
+        static int op_location = 0;
 
-        if (isdigit(s[i]))
-        {
-            operand[j] = s[i] - '0';
-            if (isoperator(operator[0]) == true && result == 0)
-            {
-                result = operation(operand[j-1], operand[j], operator[k-1]); 
-                printf("result -> %d\n", result); 
-                printf("x = %d, y = %d\n", operand[j-1], operand[j]);
-            }
-            else if (isoperator(operator[0]) && result > 0 || result < 0)
-            {
-                result = operation(result, operand[j], operator[k-1]);
-                printf("result -> %d\n", result);
-            }
-            ++j;
-        }
-        else if (isoperator(s[i]) == true)
-        {
-            operator[k++] = s[i];
-        }
-        else if (s[i] == '(' || s[i] == ')') {
-            
+        if (isoperator(s[i]) && PEMDAS(s[i]) > op_pemdas) {
+            op_pemdas = PEMDAS(s[i]);
+            op_location = i;
         }
 
-        printf("%c = s[i], %d = j\n",s[i], j);
+        int results[100];
+        static int r = 0;
+
+        if (op_location > 0) {
+            results[r] = operation(s[op_location-1]-'0', s[op_location+1]-'0', s[op_location]);
+            printf("op1:%d op2:%d operator:%c\n", s[op_location-1]-'0', s[op_location+1]-'0', s[op_location]);
+            printf("result:%d\n", results[r++]);
+        }
         ++i;
     }
 }
@@ -105,8 +97,7 @@ void start(char s[]) {
 char *fakegetline(char s[]) {
     int i, c;
     i = 0;
-    while((c = getchar()) != '\n')
-    {
+    while((c = getchar()) != '\n') {
         if (c != ' ')
             s[i++] = c;
     }
