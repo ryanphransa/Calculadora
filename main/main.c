@@ -1,256 +1,208 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
-#include <math.h>
 
-#define MAXOP   100
-#define NUMBER  '0'
-#define MAXVAL 100
+float operands[100];
+char operators[100];
 
-static int getop(char []);
-static void push(double);
-static double pop(void);
+float results[100];
 
-int sp = 0;      
-int spInt = 0;
-double val[MAXVAL];
+char *fakegetline(char string[]) {
+    int i, c;
+    i = 0;
+    while((c = getchar()) != '\n') {
+        if (c != ' ')
+        string[i++] = c;
+    }
+    string[i] = '\0';
 
-void printHelp(void) {
-    const int sz = 255;
-
-    char str[sz];
-    FILE *fp;
-
-    fp = fopen("help.txt", "r");
-
-    while (fgets(str,sz,fp)!=NULL) {
-        printf("%s", str);
-    };
-
-    fclose(fp);
+    return string;
 }
 
-int main(void)
-{
-    int type;
-    double op1;
-    double op2;
-    int op1_int;
-    int op2_int;
-    char s[MAXOP];
-    double result;
-    double op;
-    char operator;
-    
-    bool nonl = false; // no newline, doesn't call and print pop() in '\n'
+int isoperator(char c) {
+    static char operator = 0;
+    if (c == '+' || c == '-' ||
+        c == '*' || c == '/') {
+        operator = c;
+        return true;
+    }
+    else
+        return operator;
+}
 
-    while((type = getop(s)) != EOF) {
-        switch(type) {
-            case NUMBER:
-                push(atof(s));
-                break;
-            case '=':
-                result = pop();
-                switch(operator) {
-                    case '*':
-                        push(result / op);
-                        break;
-                    case '+':
-                        push(result - op);
-                        break;
-                    case '-':
-                        push(result + op);
-                        break;
-                    case '/':
-                        push(result * op);
-                        break;
-                }
-                break;
-            case '-':
-                op2 = pop();
-                op1 = pop();
-                operator = '-';
-                if (op1 == 'x') {
-                    op = op2;
-                    break;
-                }
-                else if (op2 == 'x') {
-                    op = op1;
-                    break;
-                }
-                push(op1 - op2);
-                break;
-            case '+':
-                op2 = pop();
-                op1 = pop();
-                operator = '+';
-                if (op1 == 'x') {
-                    op = op2;
-                    break;
-                }
-                else if (op2 == 'x') {
-                    op = op1;
-                    break;
-                }
-                push(op1 + op2);
-                break;
-            case '*':
-                op2 = pop();
-                op1 = pop();
-                operator = '*';
-                if (op1 == 'x') {
-                    op = op2;
-                    break;
-                }
-                else if (op2 == 'x') {
-                    op = op1;
-                    break;
-                }
-                push(op1 * op2);
-                break;
-            case 'z':
-                op2 = pop();
-                push(pop() - op2);
-                break;
-            case '/':
-                op2 = pop();
-                op1 = pop();
-                operator = '/';
-                if (op1 == 'x' && op2 != 0.0) {
-                    op = op2;
-                    break;
-                }
-                else if (op2 == 'x') {
-                    op = op1;
-                    break;
-                }
+int pemdas(char operator) {
+    switch (operator) {
+        case '+':
+            return 10;
+        case '-':
+            return 10;
+        case '*':
+            return 20;
+        case '/':
+            return 20;
+        case '(':
+            return 30;
+        case ')':
+            return 30;
+        default:
+            return 0;
+    }
+}
 
-                if(op2 != 0.0)
-                    push(pop() / op2);
-                else
-                    printf("error: zero divisor\n");
-                break;
-            case '%':
-                op2_int = pop();
-                op1_int = pop();
-                push(op1_int % op2_int);
-                break;
-            case '\n':
-                if(nonl == false)
-                    printf("\t%.8g\n", pop());
-                nonl = false;
-                break;
-            case 'h':
-                printHelp();
-                nonl = true;
-                break;
-            case 'p': // print stack
-                if (sp > 0) {
-                    printf("stack: ");
-                    for(int i = sp; i > 0; --i)
-                        printf("%.2f ", val[i]);
-                    nonl = true;
-                }
-                else
-                    printf("error: can't print stack, stack empty");
-                putchar('\n');
-                break;
-            case 'r': // replicate last stack element
-                if (sp > 0) 
-                    push(val[sp]);
-                else
-                    printf("error: can't replicate, stack empty");
-                break;
-            case 's': // swap last two stack elements
-                if (sp > 1) {
-                    int temp = val[sp-1];
-                    val[sp-1] = val[sp-2];
-                    val[sp-2] = temp;
+float operation(float op1, float op2, char operator) {
+    switch (operator) {
+        case '+':
+            return op1 + op2;
+        case '-':
+            return op1 - op2;
+        case '*':
+            return op1 * op2;
+        case '/':
+            return op1 / op2;
+    }
+}
 
-                    printf("last two stack elements swapped succesfully\n");
+void convert(char string[]) {
+    for (size_t i = 0; ; i++) {
+        static size_t j = 0;
+        static size_t k = 0;
+        static float n = 0;
 
-                    nonl = true;
-                }
-                else
-                    printf("error: not enough elements to swap\n");
-                break;
-            case 'c': // clear stack
-                while (sp > 0)
-                    pop();
-                nonl = true;
-                break;
-            case 'x':
-                push('x');
-                break;
-            default:
-                printf("error: unknown command %s\n", s);
-                break;
+        static int sign = 1;
+
+        if (isdigit(string[i])) {
+            n = n * 10 + (string[i] - '0');
+        } else if (string[i] == '.') {
+            // do something bro 
+        } else if (string[i] == '-' && !isdigit(string[i-1])) {
+            sign = -1;
+        } else if (isoperator(string[i])) {
+            operators[k++] = string[i];
+            if (n > 0) {
+                operands[j++] = n * sign;
+            }
+            n = 0;
+            sign = 1;
+        }
+
+        if (string[i] == '\0') {
+            operands[j] = '\0';
+            operators[k] = '\0';
+
+            operands[j++] = n * sign;
+            n = 0;
+            sign = 1;
+            break;
         }
     }
+}
+
+void operation_order(void) {
+    for (size_t i = 1; ; i++) {
+        static size_t j = 0;
+        static float result = 0;
+        float temp_result = 0;
+
+        printf("%c <- i=%d\n", operators[i], i);
+
+        static int my_op = 0;
+        static int last_op = 0;
+
+        if (pemdas(operators[i]) > pemdas(operators[my_op]))
+            my_op = i;
+
+        if (operators[i] == '\0' && operators[my_op] != 0) {
+            // Break when don't find a operator that is,
+            // every element of operators is == 'X'.
+            if (operators[my_op] == 'X')
+                break;
+            printf("%c <- operator im using\n"
+                   "%d <- last_op\n", operators[my_op], last_op);
+
+            if (results[last_op] == 0) {
+                results[my_op] = operation(operands[my_op],
+                                           operands[my_op+1],
+                                           operators[my_op]);
+            } else if (operators[my_op-1] == 'X' &&
+                       operators[my_op+1] == 'X') {
+                // Actually i should identify who is the op1 and op2
+                // How?:
+                // Probably using only results[] instead of result and temp_result,
+                // now with results[my_op] is pretty easir to find op1 and op2,
+                // look:
+                results[my_op] = operation(results[my_op-1],
+                                           results[my_op+1],
+                                           operators[my_op]);
+                printf("a\n");
+            } else if (last_op < my_op) {
+                if (last_op != my_op-1) {
+                    results[my_op] = operation(operands[my_op],
+                                               operands[my_op+1],
+                                               operators[my_op]);
+                    printf("b\n");
+                }
+                else {
+                    results[my_op] = operation(results[last_op],
+                                               operands[my_op+1],
+                                               operators[my_op]);
+                    printf("d\n");
+                }
+            } else if (last_op > my_op) {
+                if (last_op != my_op+1) {
+                    results[my_op] = operation(operands[my_op],
+                                               operands[my_op+1],
+                                               operators[my_op]);
+                    printf("c\n");
+                }
+                else {
+                    results[my_op] = operation(results[last_op],
+                                               operands[my_op], 
+                                               operators[my_op]); 
+                    printf("e\n");
+                }
+            }
+
+
+            printf("%f <- result\n", results[my_op]);
+            
+            // delete operator element that was already used.
+            operators[my_op] = 'X';
+
+            // last_op is being used to identify the location of the
+            // last operator used in a operation.
+            last_op = my_op;
+
+            i = my_op = 0;
+        }
+    }
+}
+
+int main() {
+    char string[100];
+
+    fakegetline(string);
+
+    // Convert string chars in operands and operators
+    convert(string);
+
+    // Start the operations calling with PEMDAS order
+    operation_order();
+
+    printf("Operands: \n");
+    for(size_t i = 0; operands[i] != 0; i++)
+        printf("%f ", operands[i]);
+
+    putchar('\n');
+
+    printf("Operators: \n");
+    for(size_t i = 0; operators[i] != 0; i++) {
+        printf("%c ", operators[i]);
+    }
+
+    printf("Results: \n");
+    for(size_t i = 0; operators[i] != 0; i++) {
+        printf("%f ", results[i]);
+    }
+
     return 0;
-}
-
-static void push(double f)
-{
-    if (sp < MAXVAL)
-        val[sp++] = f;
-    else
-        printf("error: stack full, can't push %g\n", f);
-}
-
-static double pop(void)
-{
-    if (sp > 0)
-        return val[--sp];
-    else {
-        printf("error: stack empty\n");
-        return 0.0;
-    }
-}
-
-#define BUFSIZE 100
-
-char buf[BUFSIZE];
-int bufp = 0;
-
-static int getch(void)
-{
-    return (bufp > 0) ? buf[--bufp] : getchar();
-}
-
-static void ungetch(int c)
-{
-    if (bufp >= BUFSIZE)
-        printf("ungetch: too many characters\n");
-    else
-        buf[bufp++] = c;
-}
-
-static int getop(char s[])
-{
-    int i, c, sign;
-
-    while((s[0] = c = getch()) == ' ' || c == '\t')
-        ;
-    sign = 1;
-    s[1] = '\0';
-    if (!isdigit(c) && c != '.' && c != '-')
-        return c*sign;
-
-    i = 0;
-    if (c == '-') { 
-        sign = -1;
-        while (isdigit(s[++i] = c = getch()))
-            ;
-    }
-    if (isdigit(c))
-        while (isdigit(s[++i] = c = getch()))
-            ;
-    if (c == '.')
-        while (isdigit(s[++i] = c = getch()))
-            ;
-    s[i] = '\0';
-    if (c != EOF)
-        ungetch(c);
-    return NUMBER; 
 }
