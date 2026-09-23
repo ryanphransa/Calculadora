@@ -7,10 +7,7 @@ char *fakegetline(char string[]) {
     i = 0;
     while((c = getchar()) != '\n') {
         if (c != ' ')
-        string[i++] = c;
-        if (c == EOF) {
-            printf("FEIJAO\n");
-        }
+            string[i++] = c;
     }
     string[i] = '\0';
 
@@ -38,10 +35,6 @@ int pemdas(char operator) {
             return 20;
         case '/':
             return 20;
-        case '(':
-            return 30;
-        case ')':
-            return 30;
         default:
             return 0;
     }
@@ -61,17 +54,23 @@ float operation(float op1, float op2, char operator) {
 }
 
 void convert(char string[], char *operators, float *operands) {
+    size_t j = 0;
+    size_t k = 0;
+    float n = 0;
+    float f = 10;
+    bool floatPoint = false;
+
+    int sign = 1;
     for (size_t i = 0; ; i++) {
-        static size_t j = 0;
-        static size_t k = 0;
-        static float n = 0;
-
-        static int sign = 1;
-
         if (isdigit(string[i])) {
-            n = n * 10 + (string[i] - '0');
+            if (floatPoint == false)
+                n = n * 10 + (string[i] - '0');
+            else {
+                n += (string[i] - '0') / f;
+                f *= 10;
+            }
         } else if (string[i] == '.') {
-            // do something bro 
+            floatPoint = true;
         } else if (string[i] == '-' && !isdigit(string[i-1])) {
             sign = -1;
         } else if (isoperator(string[i])) {
@@ -79,6 +78,8 @@ void convert(char string[], char *operators, float *operands) {
             if (n > 0) {
                 operands[j++] = n * sign;
             }
+            floatPoint = false;
+            f = 10;
             n = 0;
             sign = 1;
         }
@@ -99,11 +100,9 @@ void convert(char string[], char *operators, float *operands) {
 // Instead of global operators, pointers to the first element;
 float operation_order(char *operators, float *operands) {
     float results[100] = {0};
+    int my_op = 0;
+    int last_op = 0;
     for (size_t i = 1; ; i++) {
-        printf("a");
-        static int my_op = 0;
-        static int last_op = 0;
-
         if (pemdas(operators[i]) > pemdas(operators[my_op])) {
             my_op = i;
         }
@@ -113,9 +112,6 @@ float operation_order(char *operators, float *operands) {
             if (operators[my_op] == 'X') {
                 return results[last_op];
             }
-
-            printf("%c <- operator im using\n"
-                   "%d <- last_op\n", operators[my_op], last_op);
 
             if (results[last_op] == 0) {
                 results[my_op] = operation(operands[my_op],
@@ -150,7 +146,7 @@ float operation_order(char *operators, float *operands) {
                 }
             }
 
-            printf("%f <- result\n", results[my_op]);
+            // printf("%f <- result\n", results[my_op]);
             
             // delete operator element that was already used.
             operators[my_op] = 'X';
@@ -194,7 +190,7 @@ int main() {
         // Start the operations calling with PEMDAS order
         float result = operation_order(operators, operands);
 
-        printf("result is: %f\n", result);
+        printf("result is: %.4f\n", result);
 
         //clear arrays
         for (size_t i; i < 100; i++) {
