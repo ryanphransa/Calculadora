@@ -1,6 +1,19 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <string.h>
+
+enum {
+    BUFFER_SIZE = 1000
+};
+
+char variables[BUFFER_SIZE] = {0};
+bool two_members_operation = false;
+
+float history[BUFFER_SIZE] = {0};
+size_t b = 0; // for history;
+
+size_t parentheses[BUFFER_SIZE] = {0};
 
 char *fakegetline(char string[]) {
     int i, c;
@@ -15,70 +28,97 @@ char *fakegetline(char string[]) {
 }
 
 int isoperator(char c) {
-    static char operator = 0;
-    if (c == '+' || c == '-' ||
-        c == '*' || c == '/' ) {
-        operator = c;
+    if (c == '+' || c == '-' || c == '*' || c == '/' ) {
         return true;
     }
-    else
-        return operator;
 }
 
 int pemdas(char operator) {
     switch (operator) {
-        case '+':
-            return 10;
-        case '-':
-            return 10;
-        case '*':
-            return 20;
-        case '/':
-            return 20;
+        case '+': return 10;
+        case '-': return 10;
+        case '*': return 20;
+        case '/': return 20;
         default:
+            //printf("PEMDAS error: Not found a valid operator\n");
             return 0;
     }
 }
 
 float operation(float op1, float op2, char operator) {
     switch (operator) {
-        case '+':
-            return op1 + op2;
-        case '-':
-            return op1 - op2;
-        case '*':
-            return op1 * op2;
-        case '/':
-            return op1 / op2;
+        case '+': return op1 + op2;
+        case '-': return op1 - op2;
+        case '*': return op1 * op2;
+        case '/': return op1 / op2;
+        default:
+            printf("Operation error: Not found a valid operator.\n");
+            return 0;
     }
 }
+
+char invert_operator(char operator) {
+    switch (operator) {
+        case '+': return '-';
+        case '-': return '+';
+        case '*': return '/';
+        case '/': return '*';
+        default:
+            printf("invert_operator error: Not found a valid operator.\n");
+            return 0;
+    }
+}
+
+float operation_order(char *operators, float *operands);
 
 void convert(char string[], char *operators, float *operands) {
     size_t j = 0;
     size_t k = 0;
+
     float n = 0;
     float f = 10;
-    bool floatPoint = false;
+
+    bool float_point = false;
+    two_members_operation = false;
 
     int sign = 1;
+    bool parentheses_status = false;
+
     for (size_t i = 0; ; i++) {
         if (isdigit(string[i])) {
-            if (floatPoint == false)
+            if (!float_point)
                 n = n * 10 + (string[i] - '0');
             else {
-                n += (string[i] - '0') / f;
+                n = n + (string[i] - '0') / f;
                 f *= 10;
             }
         } else if (string[i] == '.') {
-            floatPoint = true;
+            float_point = true;
         } else if (string[i] == '-' && !isdigit(string[i-1])) {
             sign = -1;
+        } else if (string[i] >= 'a' && string[i] <= 'z') {
+            // variables
+            n = string[i];
+            variables[j] = string[i];
+        } else if (string[i] == '=') {
+            two_members_operation = true;
+            string[i] = '+';
+            --i;
+        } else if (string[i] == '(') {
+            parentheses_status = true;
+        } else if (string[i] == ')') {
+            parentheses_status = false;
         } else if (isoperator(string[i])) {
-            operators[k++] = string[i];
-            if (n > 0) {
-                operands[j++] = n * sign;
+            if (parentheses_status)
+                parentheses[k] = 1;
+            if (!two_members_operation) {
+                operators[k++] = string[i];
+            } else {
+                operators[k++] = /*invert_operator*/(string[i]);
             }
-            floatPoint = false;
+            operands[j++] = n * sign;
+            
+            float_point = false;
             f = 10;
             n = 0;
             sign = 1;
@@ -91,23 +131,39 @@ void convert(char string[], char *operators, float *operands) {
             operands[j++] = n * sign;
             n = 0;
             sign = 1;
+
             break;
         }
     }
 }
 
 
-// Instead of global operators, pointers to the first element;
 float operation_order(char *operators, float *operands) {
-    float results[100] = {0};
+    float results[BUFFER_SIZE] = {0};
     int my_op = 0;
     int last_op = 0;
+    size_t t = 0;
+
+    // This is the way i find to prioritize parentheses.
+    int parentheses_priority = 100;
     for (size_t i = 1; ; i++) {
-        if (pemdas(operators[i]) > pemdas(operators[my_op])) {
+        /*if (parentheses[i] == 1 && parentheses[my_op] == 0) {
+            if (pemdas(operators[i])+parentheses_priority > pemdas(operators[my_op])) {
+                my_op = i;
+            }
+        } else if (parentheses[i] == 0 && parentheses[my_op] == 1) {
+            if (pemdas(operators[i]) > pemdas(operators[my_op])+parentheses_priority) {
+                my_op = i;
+            }
+        } else if (parentheses[i] == 1 && parentheses[my_op] == 1) {
+            if (pemdas(operators[i])+parentheses_priority > pemdas(operators[my_op])+parentheses_priority) {
+                my_op = i;
+            }
+        } else*/ if (pemdas(operators[i]) > pemdas(operators[my_op])) {
             my_op = i;
         }
 
-        if (operators[i] == '\0' && operators[my_op] != 0) {
+        if (operators[i+1] == '\0' && operators[my_op] != 0) {
             // Break when every element of operators is == 'X'.
             if (operators[my_op] == 'X') {
                 return results[last_op];
@@ -146,41 +202,23 @@ float operation_order(char *operators, float *operands) {
                 }
             }
 
-            // printf("%f <- result\n", results[my_op]);
-            
-            // delete operator element that was already used.
             operators[my_op] = 'X';
 
-            // last_op is being used to identify the location of the
-            // last operator used in a operation.
             last_op = my_op;
+
+            parentheses[my_op] = 0;
 
             i = my_op = 0;
         }
     }
-
-    printf("Operands: \n");
-    for(size_t i = 0; operands[i] != 0; i++)
-        printf("%f ", operands[i]);
-
-    putchar('\n');
-
-    printf("Operators: \n");
-    for(size_t i = 0; operators[i] != 0; i++) {
-        printf("%c ", operators[i]);
-    }
-
-    printf("Results: \n");
-    for(size_t i = 0; operators[i] != 0; i++) {
-        printf("%f ", results[i]);
-    }
 }
 
 int main() {
-    char string[100];
+    char string[BUFFER_SIZE];
 
-    float operands[100];
-    char operators[100];
+    float operands[BUFFER_SIZE];
+    char operators[BUFFER_SIZE];
+
     while(1) { 
         fakegetline(string);
 
@@ -189,8 +227,12 @@ int main() {
 
         // Start the operations calling with PEMDAS order
         float result = operation_order(operators, operands);
+        history[b++] = result;
 
-        printf("result is: %.4f\n", result);
+        if (!two_members_operation)
+            printf("result is: %.4f\n", result);
+        else
+            printf("x is: %.4f\n", result);
 
         //clear arrays
         for (size_t i; i < 100; i++) {
