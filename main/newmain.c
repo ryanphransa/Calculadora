@@ -7,14 +7,14 @@ enum {
     BUFFER_SIZE = 100
 };
 
+double parentheses[BUFFER_SIZE] = {0};
+
 int pemdas(char operator) {
     switch (operator) {
         case '+': return 10;
         case '-': return 10;
         case '*': return 20;
         case '/': return 20;
-        case '(': return 30;
-        case ')': return 30;
         default:
             //printf("PEMDAS error: Not found a valid operator\n");
             return 0;
@@ -52,6 +52,9 @@ void fakegetline(char *operator, double *operand) {
     double n = 0, f = 10;
     bool float_point = false;
 
+    bool parentheses_on = false;
+    int parentheses_nest = 0;
+
     while((c = getchar()) != EOF) {
         if (isdigit(c)) {
             if (!float_point)
@@ -62,7 +65,16 @@ void fakegetline(char *operator, double *operand) {
             }
         } else if (c == '.') {
             float_point = true;
+        } else if (c == '(') {
+            parentheses_on = true;
+            parentheses_nest += 100;
+        } else if (c == ')') {
+            parentheses_nest -= 100;
+            if (parentheses_nest < 100)
+                parentheses_on = false;
         } else if (isoperator(c)) {
+            if (parentheses_on)
+                parentheses[j] = parentheses_nest;
             operand[i++] = n; 
             operator[j++] = c;
 
@@ -88,6 +100,12 @@ void delete_operator(char *operator, size_t index) {
     }
 }
 
+void delete_parentheses(size_t index) {
+    for (; parentheses[index] != '\0'; index++) {
+        parentheses[index] = parentheses[index+1];
+    }
+}
+
 double expression(char *operator, double *operand) {
     float results[BUFFER_SIZE];
     float result = 0;
@@ -96,7 +114,7 @@ double expression(char *operator, double *operand) {
     size_t ignore_it = 1; // cosmetic index '1)'
 
     for (size_t i = 0; ; i++) {
-        if (pemdas(operator[i]) > pemdas(operator[my_op])) {
+        if (pemdas(operator[i])+parentheses[i] > pemdas(operator[my_op])+parentheses[my_op]) {
             my_op = i;
         }
 
@@ -108,16 +126,22 @@ double expression(char *operator, double *operand) {
             printf("%d) ", ignore_it++);
             for (size_t k = 0; operand[k] != '\0'; k++) {
                 printf("%.2f ", operand[k]);
-                if (isoperator(operator[k]))
-                    printf("%c ", operator[k]);
+                if (isoperator(operator[k])) {
+                    if (parentheses[k] > 0)
+                        printf("%cp ", operator[k]);
+                    else
+                        printf("%c ", operator[k]);
+                }
             } putchar('\n');
 
             operand[my_op] = operation(operand[my_op], operand[my_op+1], operator[my_op]);
 
             delete_operand(operand, my_op+1);
             delete_operator(operator, my_op);
+            delete_parentheses(my_op); // parentheses == operator, so we should delete the same element in both
 
             my_op = 0;
+            i = 0;
         }
     }
 }
