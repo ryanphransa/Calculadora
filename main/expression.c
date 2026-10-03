@@ -2,12 +2,14 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
+//#include "equation.c"
 
 enum {
     BUFFER_SIZE = 100
 };
 
 double parentheses[BUFFER_SIZE] = {0};
+char variables[BUFFER_SIZE] = {0};
 
 int pemdas(char operator) {
     switch (operator) {
@@ -15,6 +17,7 @@ int pemdas(char operator) {
         case '-': return 10;
         case '*': return 20;
         case '/': return 20;
+        case '"': return 30;
         default:
             //printf("PEMDAS error: Not found a valid operator\n");
             return 0;
@@ -27,6 +30,11 @@ double operation(double op1, double op2, char operator) {
         case '-': return op1 - op2;
         case '*': return op1 * op2;
         case '/': return op1 / op2;
+        case '"':
+            for (; op2 > 1; op2--) {
+                op1 *= op1;
+            }
+            return op1;
         default:
             printf("Operation error: Not found a valid operator.\n");
             return 0;
@@ -39,6 +47,7 @@ bool isoperator(char operator) {
         case '-':
         case '*':
         case '/':
+        case '"':
             return true;
         default:
             return false;
@@ -52,6 +61,7 @@ void fakegetline(char *operator, double *operand) {
     double n = 0, f = 10;
     bool float_point = false;
 
+    bool variable_on = false;
     bool parentheses_on = false;
     int parentheses_nest = 0;
 
@@ -80,8 +90,15 @@ void fakegetline(char *operator, double *operand) {
 
             float_point = false;
             n = 0, f = 10;
+        } else if (isalpha(c)) {
+            // variable
+            variable_on = true;
+            variables[i++] = c; // use the same index as operand
         } else if (c == '\n') {
             operand[i++] = n;
+            break;
+        } else {
+            printf("ERROR\nThe format is wrong, breaking.\n");
             break;
         }
     }
@@ -123,7 +140,7 @@ double expression(char *operator, double *operand) {
                 return operand[0];
 
             // below has cosmetic-print code
-            printf("%d) ", ignore_it++);
+            printf("\t%d) ", ignore_it++);
             for (size_t k = 0; operand[k] != '\0'; k++) {
                 printf("%.2f ", operand[k]);
                 if (isoperator(operator[k])) {
@@ -147,14 +164,24 @@ double expression(char *operator, double *operand) {
 }
 
 int main() {
+    printf(""
+    "▙▗▌   ▞▀▖    ▜ ▞▀▖   ▜    \n"
+    "▌▘▌▌ ▌▌ ▌▌  ▌▐ ▌  ▝▀▖▐ ▞▀▖\n"
+    "▌ ▌▚▄▌▌ ▌▐▐▐ ▐ ▌ ▖▞▀▌▐ ▌ ▖\n"
+    "▘ ▘▗▄▘▝▀  ▘▘  ▘▝▀ ▝▀▘ ▘▝▀ \n");
+
     char operator[BUFFER_SIZE];
     double operand[BUFFER_SIZE];
 
-    fakegetline(operator, operand);
-    putchar('\n'); // cosmetic reasons
+    while(1) {
+        printf("Expression: ");
+        fakegetline(operator, operand);
+        
+        double result = expression(operator, operand);
 
-    double result = expression(operator, operand);
-    printf("\n%.2f <- final result", result);
-
+        printf("┌────────────────┐\n"
+               "│  Result: %.2f  │\n"
+               "└────────────────┘\n\n", result);
+    }
     return 0;
 }
