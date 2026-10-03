@@ -1,1 +1,1 @@
-<img width="2000" height="1024" alt="myowlcalcpsd(1)" src="https://github.com/user-attachments/assets/0dae8d86-78af-44c7-bce0-ed58611c9097" />
+<img width="2000" height="500" alt="myowlcalc" src="https://github.com/user-attachments/assets/6863d9a1-39d3-4c19-a2d0-69496ff4315f" />
